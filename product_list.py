@@ -96,29 +96,26 @@ class Scraper:
     }
 
 
-  def get_data(self):
-    self.driver.get('https://www.tokopedia.com/search?navsource=&page=2&q=laptop&srp_component_id=02.01.00.00&srp_page_id=&srp_page_title=&st=product')
+  def get_data(self, link):
+    self.driver.get(link)
     
     counter_page = 0
     datas = []
-
-    while counter_page < 1:
-      for _ in range(0, 6500, 500):
+    product_links = []
+    while counter_page < 15:
+      for _ in range(0, 4500, 500):
         time.sleep(0.1)
         self.driver.execute_script("window.scrollBy(0,500)")
 
-      product_links = []
+      
       elements = self.driver.find_elements(by=By.CLASS_NAME, value='css-gfx8z3')
       for element in elements:
         link_product = element.find_element(by=By.TAG_NAME, value='a').get_attribute('href')
 
         if 'ta.tokopedia.com' in link_product:
           continue
-
+        print("link_product", link_product)
         product_links.append(link_product)
-
-        if len(product_links) <= 5:
-          break
 
       counter_page += 1
       print(counter_page)
@@ -133,29 +130,20 @@ class Scraper:
 
 
 scraper = Scraper()
-datas = scraper.get_data()
+datas = scraper.get_data('https://www.tokopedia.com/p/audio-kamera-elektronik-lainnya/aksesoris-kamera/kabel-konektor-kamera')
 scraper.close()
 
 print(datas)
 
 data_products = []
-
-header = ['name', 'price', 'detail', 'desc', 'imgs']
-with open('product1.csv', 'w', encoding='UTF8', newline='') as f:
-    writer = csv.writer(f)
-
-    # write the header
-    writer.writerow(header)
-
-    for data in datas:
-      scraper2 = Scraper()
-      try:
-        data_products.append(scraper2.get_product_detail(data))
-        writer.writerow([data_products[-1]["name"], data_products[-1]["price"], data_products[-1]["detail"], data_products[-1]["desc"], data_products[-1]["imgs"]])
-      except Exception as e:
-        print(e)
-      finally:
-        scraper2.close()
+for data in datas:
+  scraper2 = Scraper()
+  try:
+    data_products.append(scraper2.get_product_detail(data))
+  except Exception as e:
+    print(e)
+  finally:
+    scraper2.close()
     
 
 print(data_products)
@@ -163,5 +151,5 @@ print(data_products)
 json_object = json.dumps(data_products, indent=4)
  
 # Writing to sample.json
-with open("product5.json", "w") as outfile:
+with open("product_hp.json", "w") as outfile:
     outfile.write(json_object)
