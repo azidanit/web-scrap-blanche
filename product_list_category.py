@@ -3,6 +3,7 @@ from selenium import webdriver
 import time
 import csv
 import json
+import threading
 
 class Scraper:
   def __init__(self):
@@ -116,8 +117,8 @@ class Scraper:
           continue
 
         product_links.append(link_product)
-        
-        if len(product_links) >= 2:
+
+        if len(product_links) >= 1:
           break
 
       counter_page += 1
@@ -132,63 +133,82 @@ class Scraper:
     self.driver.close()
 
 
+def scrap_cat(from_idx, to_idx):
+  # Opening JSON file
+  f = open('categories_fix.json')
+    
+  # returns JSON object as 
+  # a dictionary
+  data_json = json.load(f)
+  counter_file = from_idx
+  for data_row_json in data_json[from_idx:to_idx]:
+    new_data_json = []
+
+    level_data = {"level_1_name" : data_row_json["level_1_name"], "level_1_href" : data_row_json["level_1_href"], "level_2" : []}
+
+    for data_2 in data_row_json["level_2"]:
+      level_2_data = {"level_2_name" : data_2["level_2_name"], "level_2_href" : data_2["level_2_href"], "level_3" : []}
+
+      for data_3 in data_2["level_3"]:
+        level_3_name = data_3["level_3_name"]
+        level_3_href = data_3["level_3_href"]
+        level_3_data = {"level_3_name" : level_3_name, "level_3_href" : level_3_href,
+        "products": None}
+
+        datas = []
+        try:
+          scraper = Scraper()
+          print("OPENING PRODUCT LIST=====", level_3_href)
+          datas = scraper.get_data(level_3_href)
+          scraper.close()
+        except Exception as e:
+          print(e)
+          continue
+        
+        print("DONE GET PRODUCT LIST===== GOT ", len(datas), "PRODUCTS")
+        data_products = []
+        for data in datas:
+          scraper2 = Scraper()
+          try:
+            print("OPENING PRODUCT DETAIL=====", data)
+            data_products.append(scraper2.get_product_detail(data))
+          except Exception as e:
+            print(e)
+            scraper2.close()
+            continue
+          
+          level_3_data["products"] = data_products.copy()
+
+          level_2_data["level_3"].append(level_3_data.copy())
+          print(level_3_data)
+
+          level_data["level_2"].append(level_2_data.copy())
+        
+        new_data_json.append(level_data.copy())
+        
+    # Serializing json
+    json_object = json.dumps(new_data_json[-1], indent=4)
+
+    # Writing to sample.json
+    with open("product_category_populate_" + str(counter_file) + ".json", "w") as outfile:
+      counter_file += 1
+      outfile.write(json_object)
+
+# thread_list = []
+# for i in range(5):
+#   thread = threading.Thread(target=scrap_cat, args=(i*6, (i+1)*6))
+#   thread_list.append(thread)
+#   thread.start()
+
+# for i in range(5):
+#   thread_list[i].join()
+
+scrap_cat(0, 1)
+
 # Opening JSON file
 f = open('categories_fix.json')
   
 # returns JSON object as 
 # a dictionary
 data_json = json.load(f)
-counter_file = 1
-for data_row_json in data_json[0:1]:
-  new_data_json = []
-
-  level_data = {"level_1_name" : data_row_json["level_1_name"], "level_1_href" : data_row_json["level_1_href"], "level_2" : []}
-
-  for data_2 in data_row_json["level_2"]:
-    level_2_data = {"level_2_name" : data_2["level_2_name"], "level_2_href" : data_2["level_2_href"], "level_3" : []}
-
-    for data_3 in data_2["level_3"]:
-      level_3_name = data_3["level_3_name"]
-      level_3_href = data_3["level_3_href"]
-      level_3_data = {"level_3_name" : level_3_name, "level_3_href" : level_3_href,
-      "products": None}
-
-      datas = []
-      try:
-        scraper = Scraper()
-        print("OPENING PRODUCT LIST=====", level_3_href)
-        datas = scraper.get_data(level_3_href)
-        scraper.close()
-      except Exception as e:
-        print(e)
-        continue
-      
-      print("DONE GET PRODUCT LIST===== GOT ", len(datas), "PRODUCTS")
-      data_products = []
-      for data in datas:
-        scraper2 = Scraper()
-        try:
-          print("OPENING PRODUCT DETAIL=====", data)
-          data_products.append(scraper2.get_product_detail(data))
-        except Exception as e:
-          print(e)
-          scraper2.close()
-          continue
-        
-        level_3_data["products"] = data_products.copy()
-
-        level_2_data["level_3"].append(level_3_data.copy())
-        print(level_3_data)
-
-        level_data["level_2"].append(level_2_data.copy())
-      
-      new_data_json.append(level_data.copy())
-      
-  # Serializing json
-  json_object = json.dumps(new_data_json[-1], indent=4)
-
-  # Writing to sample.json
-  with open("product_category_populate_" + str(counter_file) + ".json", "w") as outfile:
-    counter_file += 1
-    outfile.write(json_object)
-
+print(data_json[0])
