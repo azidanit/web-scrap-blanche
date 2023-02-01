@@ -197,7 +197,7 @@ def scrap_cat(from_idx, to_idx):
 
 # thread_list = []
 # for i in range(5):
-#   thread = threading.Thread(target=scrap_cat, args=(i*6, (i+1)*6))
+#   thread = threading.Thread(target=scrap_cat, args=(i*1, (i+1)*1))
 #   thread_list.append(thread)
 #   thread.start()
 
@@ -205,11 +205,3 @@ def scrap_cat(from_idx, to_idx):
 #   thread_list[i].join()
 
 scrap_cat(0, 1)
-
-# Opening JSON file
-f = open('categories_fix.json')
-  
-# returns JSON object as 
-# a dictionary
-data_json = json.load(f)
-print(data_json[0])
