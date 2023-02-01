@@ -8,6 +8,7 @@ import threading
 class Scraper:
   def __init__(self):
     self.driver = webdriver.Chrome()
+    # self.driver.minimize_window()
 
   def get_product_detail(self, link):
     self.driver.get(link)
@@ -190,7 +191,7 @@ def scrap_cat(from_idx, to_idx):
     json_object = json.dumps(new_data_json[-1], indent=4)
 
     # Writing to sample.json
-    with open("product_category_populate_" + str(counter_file) + ".json", "w") as outfile:
+    with open("product_category_populate_n" + str(counter_file) + ".json", "w") as outfile:
       counter_file += 1
       outfile.write(json_object)
 

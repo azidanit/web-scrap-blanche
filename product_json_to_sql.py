@@ -54,52 +54,26 @@ def slug_generator(title):
 def json_to_sql(json_file):
     with open(json_file) as f:
         data = json.load(f)
-        sql_products = "INSERT INTO public.products (id, merchant_id, category_id, slug, title, min_real_price, max_real_price, min_discount_price, max_discount_price, description, weight) VALUES"
+        sql_products = "INSERT INTO public.products (id, product_analytic_id, merchant_id, category_id, slug, title, min_real_price, max_real_price, min_discount_price, max_discount_price, description, weight) VALUES"
         sql_images = "INSERT INTO public.product_images (product_id, image_url) VALUES"
-        sql_analytics = "INSERT INTO public.product_analytics (product_id, avg_rating, num_of_review, num_of_sale, num_of_favorite, total_stock, score) VALUES"
+        sql_analytics = "INSERT INTO public.product_analytics (id, avg_rating, num_of_review, num_of_sale, num_of_favorite, total_stock, score) VALUES"
         sql_variant_items = "INSERT INTO public.variant_items (id, product_id, price, image_url, stock, discount_price) VALUES"
         sql_variant_specs = "INSERT INTO public.variant_specs (id, variant_item_id, variation_group_id, variation_name) VALUES"
         sql_variant_groups = "INSERT INTO public.variation_groups (id, name) VALUES"
         
-        product_id = 100
+        product_id = 99
         variant_item_id = 99
         variation_group_id = 100
         variant_spec_id = 100
+        product_analytic_id = 99
 
         for i in data:
-            price = get_price(i["price"])
-            # sql += "(" + 1 + ", '" + i["name"] + "', " + slug_generator(str(i["name"])) +  "', " + "), "
-            sql_products += "({id}, {merchant_id}, {cat_id}, '{slug}', '{title}', {min_real_price}, {max_real_price}, {min_discount_price}, {max_discount_price}, '{description}', {weight}),".format(
-                id= product_id,
-                merchant_id=1, 
-                cat_id=3, 
-                slug= "penakjaya/" + slug_generator(str(i["name"])), 
-                title= i["name"], 
-                min_real_price= price,
-                max_real_price= price,
-                min_discount_price= price,
-                max_discount_price= price,
-                description= replace_quote_postgres(i["desc"]),
-                weight= 1500
-                )
+            price = int(get_price(i["price"]))
+            min_price = price
+            max_price = price
+            total_stock = 0
 
-            # images
-            for image in i["imgs"]:
-                sql_images += "({product_id}, '{image_url}'),".format(
-                    product_id= product_id,
-                    image_url= image
-                )
-            
-            # analytics
-            sql_analytics += "({product_id}, {avg_rating}, {num_of_review}, {num_of_sale}, {num_of_favorite}, {total_stock}, {score}),".format(
-                product_id= product_id,
-                avg_rating= 0,
-                num_of_review= 0,
-                num_of_sale= 0,
-                num_of_favorite= 0,
-                total_stock= 0,
-                score= 0
-            )
+            product_id += 1
 
             # variant groups
             variant_groups_ids = []
@@ -131,6 +105,9 @@ def json_to_sql(json_file):
                         stock= 10,
                         discount_price= get_price(variant_item["price"])
                     )
+                    min_price = min(min_price, int(get_price(variant_item["price"])))
+                    max_price = max(max_price, int(get_price(variant_item["price"])))
+                    total_stock += 10
                     variant_items_ids.append(variant_item_id)
                 
                 # variant specs
@@ -152,10 +129,54 @@ def json_to_sql(json_file):
                                 variation_name= item_option_data["option_name2"]
                             )
                         variant_spec_id += 1
+            else:
+                #inset dummy variant item
+                variant_item_id += 1
+                sql_variant_items += "({id}, {product_id}, {price}, '{image_url}', {stock}, {discount_price}),".format(
+                    id= variant_item_id,
+                    product_id= product_id,
+                    price= price,
+                    image_url= "",
+                    stock= 10,
+                    discount_price= price
+                )
+                total_stock += 10
 
-            
-            product_id += 1
-            
+            # analytics
+            product_analytic_id += 1
+            sql_analytics += "({id}, {avg_rating}, {num_of_review}, {num_of_sale}, {num_of_favorite}, {total_stock}, {score}),".format(
+                id= product_analytic_id,
+                avg_rating= 0,
+                num_of_review= 0,
+                num_of_sale= 0,
+                num_of_favorite= 0,
+                total_stock= total_stock,
+                score= 0
+            )
+
+            # temp_sql_prod = len(sql_products)
+            # sql += "(" + 1 + ", '" + i["name"] + "', " + slug_generator(str(i["name"])) +  "', " + "), "
+            sql_products += "({id}, {product_analytic_id}, {merchant_id}, {cat_id}, '{slug}', '{title}', {min_real_price}, {max_real_price}, {min_discount_price}, {max_discount_price}, '{description}', {weight}),".format(
+                id= product_id,
+                product_analytic_id= product_analytic_id,
+                merchant_id=1, 
+                cat_id=3, 
+                slug= "penakjaya/" + slug_generator(str(i["name"])), 
+                title= i["name"], 
+                min_real_price= min_price,
+                max_real_price= max_price,
+                min_discount_price= min_price,
+                max_discount_price= max_price,
+                description= replace_quote_postgres(i["desc"]),
+                weight= 1500
+                )
+
+            # images
+            for image in i["imgs"]:
+                sql_images += "({product_id}, '{image_url}'),".format(
+                    product_id= product_id,
+                    image_url= image
+                )            
         
         sql_products = sql_products[:-1] + ";"
         sql_images = sql_images[:-1] + ";"
