@@ -201,6 +201,7 @@ def scrap_cat(from_idx, to_idx):
         level_3_data["products"] = data_products.copy()
         
         json_temp_prods_level3 = level_3_data.copy()
+        json_temp_prods_level3["cat_id"] = cat_id_global
         dict_to_jsonfile(json_temp_prods_level3, "product_category_populate_chunk_n" + str(cat_id_global) + ".json")
 
         level_2_data["level_3"].append(level_3_data.copy())
