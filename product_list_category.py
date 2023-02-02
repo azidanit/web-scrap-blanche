@@ -8,6 +8,8 @@ import threading
 class Scraper:
   def __init__(self):
     self.driver = webdriver.Chrome()
+    # self.driver.set_window_position(1024, 0, windowHandle='current')
+
     # self.driver.minimize_window()
 
   def get_product_detail(self, link):
@@ -104,8 +106,12 @@ class Scraper:
     counter_page = 0
     datas = []
     product_links = []
-    while counter_page < 1:
-      for _ in range(0, 4500, 500):
+    while counter_page < 5:
+      time.sleep(2)
+      self.driver.execute_script("window.scrollBy(0,-4000)")
+      time.sleep(0.1)
+      self.driver.execute_script("window.scrollBy(0,-500)")
+      for _ in range(0, 4000, 500):
         time.sleep(0.1)
         self.driver.execute_script("window.scrollBy(0,500)")
 
@@ -119,8 +125,8 @@ class Scraper:
 
         product_links.append(link_product)
 
-        if len(product_links) >= 1:
-          break
+        # if len(product_links) >= 1:
+        #   break
 
       counter_page += 1
       print(counter_page)
@@ -165,7 +171,7 @@ def scrap_cat(from_idx, to_idx):
         except Exception as e:
           print(e)
           continue
-        
+
         print("DONE GET PRODUCT LIST===== GOT ", len(datas), "PRODUCTS")
         data_products = []
         for data in datas:
@@ -177,14 +183,14 @@ def scrap_cat(from_idx, to_idx):
             print(e)
             scraper2.close()
             continue
-          
+
           level_3_data["products"] = data_products.copy()
 
           level_2_data["level_3"].append(level_3_data.copy())
           print(level_3_data)
 
           level_data["level_2"].append(level_2_data.copy())
-        
+
         new_data_json.append(level_data.copy())
         
     # Serializing json
@@ -195,13 +201,17 @@ def scrap_cat(from_idx, to_idx):
       counter_file += 1
       outfile.write(json_object)
 
-# thread_list = []
-# for i in range(5):
+thread_list = []
+# for i in range(3):
 #   thread = threading.Thread(target=scrap_cat, args=(i*1, (i+1)*1))
 #   thread_list.append(thread)
 #   thread.start()
-
-# for i in range(5):
+#
+# for i in range(2):
 #   thread_list[i].join()
+
+  # thread = threading.Thread(target=scrap_cat, args=(i*1, (i+1)*1))
+  # thread_list.append(thread)
+  # thread.start()
 
 scrap_cat(0, 1)
