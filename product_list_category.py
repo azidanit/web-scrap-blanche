@@ -140,6 +140,13 @@ class Scraper:
     self.driver.close()
 
 
+def dict_to_jsonfile(data, filename):
+    # Serializing json
+  json_object = json.dumps(data, indent = 4)
+
+  with open(filename, 'w') as outfile:
+    json.dump(data, outfile, indent=4)
+
 def scrap_cat(from_idx, to_idx):
   # Opening JSON file
   f = open('categories_fix.json')
@@ -148,19 +155,24 @@ def scrap_cat(from_idx, to_idx):
   # a dictionary
   data_json = json.load(f)
   counter_file = from_idx
+
+  cat_id_global = 99
   for data_row_json in data_json[from_idx:to_idx]:
     new_data_json = []
 
     level_data = {"level_1_name" : data_row_json["level_1_name"], "level_1_href" : data_row_json["level_1_href"], "level_2" : []}
-
+    cat_id_global += 1
     for data_2 in data_row_json["level_2"]:
       level_2_data = {"level_2_name" : data_2["level_2_name"], "level_2_href" : data_2["level_2_href"], "level_3" : []}
+      cat_id_global += 1
 
       for data_3 in data_2["level_3"]:
         level_3_name = data_3["level_3_name"]
         level_3_href = data_3["level_3_href"]
         level_3_data = {"level_3_name" : level_3_name, "level_3_href" : level_3_href,
         "products": None}
+
+        cat_id_global += 1
 
         datas = []
         try:
@@ -173,6 +185,8 @@ def scrap_cat(from_idx, to_idx):
           continue
 
         print("DONE GET PRODUCT LIST===== GOT ", len(datas), "PRODUCTS")
+
+        json_temp_prods_level3 = {}
         data_products = []
         for data in datas:
           scraper2 = Scraper()
@@ -184,12 +198,15 @@ def scrap_cat(from_idx, to_idx):
             scraper2.close()
             continue
 
-          level_3_data["products"] = data_products.copy()
+        level_3_data["products"] = data_products.copy()
+        
+        json_temp_prods_level3 = level_3_data.copy()
+        dict_to_jsonfile(json_temp_prods_level3, "product_category_populate_chunk_n" + str(cat_id_global) + ".json")
 
-          level_2_data["level_3"].append(level_3_data.copy())
-          print(level_3_data)
+        level_2_data["level_3"].append(level_3_data.copy())
+        print(level_3_data)
 
-          level_data["level_2"].append(level_2_data.copy())
+        level_data["level_2"].append(level_2_data.copy())
 
         new_data_json.append(level_data.copy())
         
