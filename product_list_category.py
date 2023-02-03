@@ -106,7 +106,7 @@ class Scraper:
     counter_page = 0
     datas = []
     product_links = []
-    while counter_page < 5:
+    while counter_page < 2:
       time.sleep(2)
       self.driver.execute_script("window.scrollBy(0,-4000)")
       time.sleep(0.1)
@@ -157,22 +157,32 @@ def scrap_cat(from_idx, to_idx):
   counter_file = from_idx
 
   cat_id_global = 99
+  is_skipping_level_1 = True
+  iter_level_1 = 0
   for data_row_json in data_json[from_idx:to_idx]:
+    if iter_level_1 < 3:
+      iter_level_1 += 1
+    else:
+      is_skipping_level_1 = False
     new_data_json = []
 
-    level_data = {"level_1_name" : data_row_json["level_1_name"], "level_1_href" : data_row_json["level_1_href"], "level_2" : []}
     cat_id_global += 1
+    level_data = {"level_1_name" : data_row_json["level_1_name"], "level_1_href" : data_row_json["level_1_href"], "cat_id": cat_id_global, "level_2" : []}
     for data_2 in data_row_json["level_2"]:
-      level_2_data = {"level_2_name" : data_2["level_2_name"], "level_2_href" : data_2["level_2_href"], "level_3" : []}
       cat_id_global += 1
+      level_2_data = {"level_2_name" : data_2["level_2_name"], "level_2_href" : data_2["level_2_href"], "cat_id": cat_id_global,"level_3" : []}
 
       for data_3 in data_2["level_3"]:
+        cat_id_global += 1
+
         level_3_name = data_3["level_3_name"]
         level_3_href = data_3["level_3_href"]
         level_3_data = {"level_3_name" : level_3_name, "level_3_href" : level_3_href,
+        "cat_id": cat_id_global,
         "products": None}
 
-        cat_id_global += 1
+        if is_skipping_level_1:
+          continue
 
         datas = []
         try:
@@ -211,6 +221,9 @@ def scrap_cat(from_idx, to_idx):
 
         new_data_json.append(level_data.copy())
         
+    if is_skipping_level_1:
+      continue
+
     # Serializing json
     json_object = json.dumps(new_data_json[-1], indent=4)
 
@@ -232,4 +245,4 @@ thread_list = []
   # thread_list.append(thread)
   # thread.start()
 
-scrap_cat(0, 1)
+scrap_cat(0, 4)

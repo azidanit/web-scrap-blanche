@@ -20,12 +20,12 @@ class Scraper:
     for element in elements:
       level_1s = element.find_element(by=By.CLASS_NAME, value='css-2wmm3i') # level 1
       level_1s = level_1s.find_elements(by=By.TAG_NAME, value='a') # level 1 A HREF
-      for level1 in level_1s:
+      for idx, level1 in enumerate(level_1s):
         level_1_name = level1.text
         level_1_href = level1.get_attribute('href')
         level_data = {"level_1_name" : level_1_name, "level_1_href" : level_1_href, "level_2" : []}
 
-        level_2_card = element.find_element(by=By.CLASS_NAME, value='css-16mwuw1') # level 2 card
+        level_2_card = element.find_elements(by=By.CLASS_NAME, value='css-16mwuw1')[idx] # level 2 card
         level_2_grid_card = level_2_card.find_element(by=By.CLASS_NAME, value='css-1g1liea') # level 2 grid placeholder
         level_2_grid = level_2_grid_card.find_elements(by=By.CLASS_NAME, value='e13h6i9f2') # level 2 grid
         for level_2 in level_2_grid:
@@ -42,7 +42,7 @@ class Scraper:
             level_3_href = level_3.get_attribute('href')
             level_3_data = {"level_3_name" : level_3_name, "level_3_href" : level_3_href}
             level_2_data['level_3'].append(level_3_data.copy())
-
+            print(level_3_data)
           level_data['level_2'].append(level_2_data.copy())
         
         catagories.append(level_data.copy())
@@ -64,7 +64,7 @@ print(datas)
 json_object = json.dumps(datas, indent=4)
  
 # Writing to sample.json
-with open("categories.json", "w") as outfile:
+with open("categories_new.json", "w") as outfile:
     outfile.write(json_object)
 
 print(json.dumps(
