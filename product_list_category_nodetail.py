@@ -198,15 +198,16 @@ def scrap_cat(from_idx, to_idx):
 
         json_temp_prods_level3 = {}
         data_products = []
-        for data in datas:
-          scraper2 = Scraper()
-          try:
-            print("OPENING PRODUCT DETAIL=====", data)
-            data_products.append(scraper2.get_product_detail(data))
-          except Exception as e:
-            print(e)
-            scraper2.close()
-            continue
+
+        # for data in datas:
+        #   scraper2 = Scraper()
+        #   try:
+        #     print("OPENING PRODUCT DETAIL=====", data)
+        #     data_products.append(scraper2.get_product_detail(data))
+        #   except Exception as e:
+        #     print(e)
+        #     scraper2.close()
+        #     continue
 
         level_3_data["products"] = data_products.copy()
         
@@ -245,4 +246,4 @@ thread_list = []
   # thread_list.append(thread)
   # thread.start()
 
-scrap_cat(0, 4)
+scrap_cat(1, 2)
