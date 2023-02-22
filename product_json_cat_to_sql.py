@@ -47,31 +47,46 @@ def slug_generator(title):
     title = title + str(random.randint(0,9999))
     title = re.sub(r'[^\w\s]', '', title)
     title = title.replace(' ', '-')
+    title = title.replace('--', '-')
+    title = title.replace("'", "''")
     title = title.lower()
 
     return title
 
+def random_number_between(start, end):
+    return random.randint(start, end)
+
+def get_merchant_domain_and_id():
+    start_id = 100
+    list_domain = ["rhynoodle","tambee","youfeed","voonte","brainbox","eabox","fivebridge","tekfly","snaptags","wordpedia","innoz","viva","shufflester","fanoodle","topicstorm","trilia","livetube","mydo","zava","tanoodle","cogilith","flashpoint","feedspan","eabox","tazzy","feedmix","trudeo","wikizz","meeveo","mymm"]
+    random_number = random_number_between(0, len(list_domain)-1)
+    return list_domain[random_number], start_id + random_number
+
 def json_to_sql(json_file):
     with open(json_file) as f:
         data = json.load(f)
-        sql_products = "INSERT INTO public.products (id, product_analytic_id, merchant_id, category_id, slug, title, min_real_price, max_real_price, min_discount_price, max_discount_price, description, weight) VALUES"
+        sql_products = "INSERT INTO public.products (id, product_analytic_id, merchant_id, merchant_domain, category_id, slug, title, min_real_price, max_real_price, min_discount_price, max_discount_price, description, weight) VALUES"
         sql_images = "INSERT INTO public.product_images (product_id, image_url) VALUES"
         sql_analytics = "INSERT INTO public.product_analytics (id, avg_rating, num_of_review, num_of_sale, num_of_favorite, total_stock, score) VALUES"
         sql_variant_items = "INSERT INTO public.variant_items (id, product_id, price, image_url, stock, discount_price) VALUES"
         sql_variant_specs = "INSERT INTO public.variant_specs (id, variant_item_id, variation_group_id, variation_name) VALUES"
         sql_variant_groups = "INSERT INTO public.variation_groups (id, name) VALUES"
         
-        product_id = 99
-        variant_item_id = 99
-        variation_group_id = 100
-        variant_spec_id = 100
-        product_analytic_id = 99
+        product_id = 9999
+        variant_item_id = 9999
+        variation_group_id = 10000
+        variant_spec_id = 10000
+        product_analytic_id = 9999
 
-        for i in data:
+        for i in data["products"]:
+            # print(i)
+            # print(i["price"])
             price = int(get_price(i["price"]))
             min_price = price
             max_price = price
             total_stock = 0
+            product_cat_id = data["cat_id"]
+            prod_merchant_domain, prod_merchant_id = get_merchant_domain_and_id()
 
             product_id += 1
 
@@ -156,12 +171,13 @@ def json_to_sql(json_file):
 
             # temp_sql_prod = len(sql_products)
             # sql += "(" + 1 + ", '" + i["name"] + "', " + slug_generator(str(i["name"])) +  "', " + "), "
-            sql_products += "({id}, {product_analytic_id}, {merchant_id}, {cat_id}, '{slug}', '{title}', {min_real_price}, {max_real_price}, {min_discount_price}, {max_discount_price}, '{description}', {weight}),".format(
+            sql_products += "({id}, {product_analytic_id}, {merchant_id}, {merchant_domain}, {cat_id}, '{slug}', '{title}', {min_real_price}, {max_real_price}, {min_discount_price}, {max_discount_price}, '{description}', {weight}),".format(
                 id= product_id,
                 product_analytic_id= product_analytic_id,
-                merchant_id=1, 
-                cat_id=3, 
-                slug= "penakjaya/" + slug_generator(str(i["name"])), 
+                merchant_id=prod_merchant_id, 
+                merchant_domain=prod_merchant_domain,
+                cat_id=product_cat_id, 
+                slug= prod_merchant_domain + "/" + slug_generator(str(i["name"])), 
                 title= i["name"], 
                 min_real_price= min_price,
                 max_real_price= max_price,
@@ -189,7 +205,7 @@ def json_to_sql(json_file):
 
 # print(json_to_sql('product_laptop.json'))
 
-sql_prod, sql_img, sql_analytic, sql_variant_item, sql_variant_spec, sql_variant_group = json_to_sql('product_laptop.json')
+sql_prod, sql_img, sql_analytic, sql_variant_item, sql_variant_spec, sql_variant_group = json_to_sql('product_category_populate_chunk_n101.json')
 # write to file
 with open('product_sql_2202/' + 'product_cat.sql', 'w') as f:
     f.write(sql_prod)
@@ -209,3 +225,4 @@ with open('product_sql_2202/' + 'variant_specs_cat.sql', 'w') as f:
 with open('product_sql_2202/' + 'variant_groups_cat.sql', 'w') as f:
     f.write(sql_variant_group)
     
+# print(get_merchant_domain_and_id())
