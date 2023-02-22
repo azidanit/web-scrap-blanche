@@ -167,7 +167,7 @@ class Scraper:
       try: 
         #go to url
         print("go to url next page")
-        self.driver.get(link + "?page=" + str(counter_page))
+        self.driver.get(link + "?page=" + str(counter_page + 1))
       except:
         print("FAILED TO GO TO NEXT PAGE")
         break
