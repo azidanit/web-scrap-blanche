@@ -112,7 +112,7 @@ class Scraper:
       self.driver.execute_script("window.scrollBy(0,-4000)")
       time.sleep(0.1)
       self.driver.execute_script("window.scrollBy(0,-500)")
-      for _ in range(0, 4000, 500):
+      for _ in range(0, 5000, 500):
         time.sleep(0.1)
         self.driver.execute_script("window.scrollBy(0,500)")
 
