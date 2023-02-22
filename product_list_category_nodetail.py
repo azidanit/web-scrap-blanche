@@ -164,8 +164,19 @@ class Scraper:
       counter_page += 1
       print(counter_page)
       # next_page = self.driver.find_element(by=By.XPATH, value="//button[@class='css-1eamy6l-unf-pagination-item']")
-      next_page = self.driver.find_element(by=By.XPATH, value="//button[@aria-label='Laman berikutnya']")
-      next_page.click()
+      try: 
+        #go to url
+        print("go to url next page")
+        self.driver.get(link + "?page=" + str(counter_page))
+      except:
+        print("FAILED TO GO TO NEXT PAGE")
+        break
+      # try:
+      #   next_page = self.driver.find_element(by=By.XPATH, value="//button[@aria-label='Laman berikutnya']")
+      #   next_page.click()
+      #   raise Exception("no next page")
+      # except:
+
     
     # return product_links
     return product_links, product_dicts
