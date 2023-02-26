@@ -73,8 +73,11 @@ class Scraper:
         continue
       imgs_src.append(img.get_attribute('src'))
 
-    detail_upper = driver.find_elements(by=By.CLASS_NAME, value='css-1dmo88g')
+    # detail_upper = driver.find_elements(by=By.CLASS_NAME, value='lblPDPInfoProduk')
+    detail_upper_tab = driver.find_element(by=By.XPATH, value="//ul[@data-testid='lblPDPInfoProduk']")
+    detail_upper = detail_upper_tab.find_elements(by=By.TAG_NAME, value="li")
     details = []
+    # detail_upper.append(driver.find_element(by=By.XPATH, value="//span[@data-test-id='lblPDPDetailProductName']").text)
     try:
       for i in range (2):
         details.append(detail_upper[i].find_elements(by=By.TAG_NAME, value='span')[-1].text)
@@ -82,13 +85,16 @@ class Scraper:
         details.append(detail_upper[i].find_elements(by=By.TAG_NAME, value='b')[-1].text)
         details.append(detail_upper[i].find_element(by=By.TAG_NAME, value='a').get_attribute('href'))
         print(detail_upper[i].find_element(by=By.TAG_NAME, value='a').text)
-    except:
+    except Exception as e:
+      print(e)
       pass
 
-    name = driver.find_element(by=By.CLASS_NAME, value='css-1320e6c').text
+    # name = driver.find_element(by=By.CLASS_NAME, value='css-1os9jjn').text
+    name = driver.find_element(by=By.XPATH, value="//h1[@data-testid='lblPDPDetailProductName']").text
     price = driver.find_element(by=By.CLASS_NAME, value='price').text
-    desc = driver.find_element(by=By.CLASS_NAME, value='eytdjj01')
-    desc = desc.find_element(by=By.TAG_NAME, value='div').text
+    # desc = driver.find_element(by=By.CLASS_NAME, value='eytdjj01')
+    # desc = desc.find_element(by=By.TAG_NAME, value='div').text
+    desc = driver.find_element(by=By.XPATH, value="//div[@data-testid='lblPDPDescriptionProduk']").text
 
     return {
       "imgs": imgs_src,
@@ -101,12 +107,12 @@ class Scraper:
 
 
   def get_data(self, link):
-    self.driver.get(link)
+    counter_page = 3
+    self.driver.get(link + "?page=" + str(counter_page))
     
-    counter_page = 0
     datas = []
     product_links = []
-    while counter_page < 2:
+    while counter_page < 4:
       time.sleep(2)
       self.driver.execute_script("window.scrollBy(0,-4000)")
       time.sleep(0.1)
@@ -130,9 +136,16 @@ class Scraper:
 
       counter_page += 1
       print(counter_page)
+      try: 
+      #go to url
+        print("go to url next page")
+        self.driver.get(link + "?page=" + str(counter_page))
+      except:
+        print("FAILED TO GO TO NEXT PAGE")
+        break
       # next_page = self.driver.find_element(by=By.XPATH, value="//button[@class='css-1eamy6l-unf-pagination-item']")
-      next_page = self.driver.find_element(by=By.XPATH, value="//button[@aria-label='Laman berikutnya']")
-      next_page.click()
+      # next_page = self.driver.find_element(by=By.XPATH, value="//button[@aria-label='Laman berikutnya']")
+      # next_page.click()
     
     return product_links
 
@@ -149,40 +162,33 @@ def dict_to_jsonfile(data, filename):
 
 def scrap_cat(from_idx, to_idx):
   # Opening JSON file
-  f = open('categories_new.json')
+  f = open('categories_new_with_id.json')
     
   # returns JSON object as 
   # a dictionary
   data_json = json.load(f)
   counter_file = from_idx
 
-  cat_id_global = 99
-  is_skipping_level_1 = True
-  iter_level_1 = 0
+  print("hereee")
+
   for data_row_json in data_json[from_idx:to_idx]:
-    if iter_level_1 < 3:
-      iter_level_1 += 1
-    else:
-      is_skipping_level_1 = False
     new_data_json = []
 
-    cat_id_global += 1
-    level_data = {"level_1_name" : data_row_json["level_1_name"], "level_1_href" : data_row_json["level_1_href"], "cat_id": cat_id_global, "level_2" : []}
+    level_data = {"level_1_name" : data_row_json["level_1_name"], "level_1_href" : data_row_json["level_1_href"], "cat_id": data_row_json["cat_id"], "cat_id_parent": data_row_json["cat_id_parent"],
+        "cat_id_grandparent": data_row_json["cat_id_grandparent"], "level_2" : []}
+
     for data_2 in data_row_json["level_2"]:
-      cat_id_global += 1
-      level_2_data = {"level_2_name" : data_2["level_2_name"], "level_2_href" : data_2["level_2_href"], "cat_id": cat_id_global,"level_3" : []}
+      level_2_data = {"level_2_name" : data_2["level_2_name"], "level_2_href" : data_2["level_2_href"], "cat_id": data_2["cat_id"], "cat_id_parent": data_2["cat_id_parent"],
+        "cat_id_grandparent": data_2["cat_id_grandparent"],"level_3" : []}
 
       for data_3 in data_2["level_3"]:
-        cat_id_global += 1
-
         level_3_name = data_3["level_3_name"]
         level_3_href = data_3["level_3_href"]
-        level_3_data = {"level_3_name" : level_3_name, "level_3_href" : level_3_href,
-        "cat_id": cat_id_global,
+        level_3_data = {"level_3_name" : level_3_name, "level_3_href" : level_3_href, 
+        "cat_id": data_3["cat_id"],
+        "cat_id_parent": data_3["cat_id_parent"],
+        "cat_id_grandparent": data_3["cat_id_grandparent"],
         "products": None}
-
-        if is_skipping_level_1:
-          continue
 
         datas = []
         try:
@@ -211,8 +217,10 @@ def scrap_cat(from_idx, to_idx):
         level_3_data["products"] = data_products.copy()
         
         json_temp_prods_level3 = level_3_data.copy()
-        json_temp_prods_level3["cat_id"] = cat_id_global
-        dict_to_jsonfile(json_temp_prods_level3, "product_category_populate_chunk_n" + str(cat_id_global) + ".json")
+        json_temp_prods_level3["cat_id"] = level_3_data["cat_id"]
+        json_temp_prods_level3["cat_id_parent"] = level_3_data["cat_id_parent"]
+        json_temp_prods_level3["cat_id_grandparent"] = level_3_data["cat_id_grandparent"]
+        dict_to_jsonfile(json_temp_prods_level3, "product_NEW_category_populate_chunk_n" + str(level_3_data["cat_id"]) + ".json")
 
         level_2_data["level_3"].append(level_3_data.copy())
         print(level_3_data)
@@ -220,15 +228,12 @@ def scrap_cat(from_idx, to_idx):
         level_data["level_2"].append(level_2_data.copy())
 
         new_data_json.append(level_data.copy())
-        
-    if is_skipping_level_1:
-      continue
 
     # Serializing json
     json_object = json.dumps(new_data_json[-1], indent=4)
 
     # Writing to sample.json
-    with open("product_category_populate_n" + str(counter_file) + ".json", "w") as outfile:
+    with open("product_new_category_populate_n" + str(counter_file) + ".json", "w") as outfile:
       counter_file += 1
       outfile.write(json_object)
 
@@ -245,4 +250,9 @@ thread_list = []
   # thread_list.append(thread)
   # thread.start()
 
-scrap_cat(0, 4)
+scrap_cat(0, 2)
+
+# scrap = Scraper()
+
+
+# print(scrap.get_product_detail("https://www.tokopedia.com/megakamera/hdmi-cable-spiral-50cm-for-camera-kabel-hdmi-coiled-type-a-to-type-a?extParam=ivf%3Dfalse"))
